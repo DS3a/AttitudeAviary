@@ -52,8 +52,8 @@ class AttitudeAviary(CtrlAviary):
 
         """
         #### Action vector ######## P0            P1            P2            P3
-        act_lower_bound = np.array([-np.pi,           -np.pi,           -np.pi,           -2000.])
-        act_upper_bound = np.array([np.pi, np.pi, np.pi, 200000])
+        act_lower_bound = np.array([-np.pi,           -np.pi,           -np.pi,           -40000.])
+        act_upper_bound = np.array([np.pi, np.pi, np.pi, 40000])
         return spaces.Dict({str(i): spaces.Box(low=act_lower_bound,
                                                high=act_upper_bound,
                                                dtype=np.float32
@@ -130,17 +130,36 @@ class AttitudeAviary(CtrlAviary):
             #     v_unit_vector = v[0:3] / np.linalg.norm(v[0:3])
             # else:
             # v_unit_vector = np.zeros(3)
+
+
+
+        # """
+        temp = self.ctrl[int(k)].computeControl(control_timestep=self.AGGR_PHY_STEPS*self.TIMESTEP,
+                                                       cur_pos=state[0:3],
+                                                       cur_quat=state[3:7],
+                                                       cur_vel=state[10:13],
+                                                       cur_ang_vel=state[13:16],
+                                                       # target_pos=action[0:3], # same as the current position
+                                                       target_rpy=np.array([action[0], action[1], action[2]]),
+                                                       target_rpy_rates=np.array([0.0, 0.0, action[2]]),
+                                                       # target_vel=self.SPEED_LIMIT * np.abs(v[3]) * v_unit_vector # target the desired velocity vector
+                                                       thrust=action[3],
+                                                       timestep=self.TIMESTEP,
+                                                )
+        # """
+        """
         temp = self.ctrl[int(k)].computeControl(control_timestep=self.AGGR_PHY_STEPS*self.TIMESTEP,
                                                        cur_pos=state[0:3],
                                                        cur_quat=state[3:7],
                                                        cur_vel=state[10:13],
                                                        cur_ang_vel=state[13:16],
                                                        target_pos=action[0:3], # same as the current position
-                                                       #target_rpy=np.array([v[0], v[1],state[9]]),
-                                                       #target_rpy_rates=np.array([0, 0, v[2]]),
+                                                       # target_rpy=np.array([action[0], action[1], 0.00]),
+                                                       # target_rpy_rates=np.array([0.-, 0.0, action[2]]),
                                                        # target_vel=self.SPEED_LIMIT * np.abs(v[3]) * v_unit_vector # target the desired velocity vector
-                                                       #thrust=v[3]
+                                                       # thrust=action[3]
                                                 )
+        """
 
         print("rpm is ", temp[0])
         rpm[int(k),:] = temp[0]

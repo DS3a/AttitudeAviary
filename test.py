@@ -49,8 +49,13 @@ if __name__ == "__main__":
         )
 
     obs = env.reset()
+    x = 0
+    y = 0
     for i in range(10*24000):
-        obs, reward, done, info = env.step(np.array([0.2001, 0.0001, 1.000, 0.0001]))
+        x = 0.00001
+        y = y+1e-7
+        yawrate = 3.141591/4
+        obs, reward, done, info = env.step(np.array([-x, 0, yawrate, 38727]))
         print(f"the reward is {reward}")
         print(f"the state is {obs}")
         if done:

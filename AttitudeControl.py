@@ -75,11 +75,12 @@ class AttitudeControl(BaseControl):
                        cur_quat,
                        cur_vel,
                        cur_ang_vel,
-                       target_pos,
-                       target_rpy=np.zeros(3),
-                       target_vel=np.zeros(3),
-                       target_rpy_rates=np.zeros(3),
-                       thrust=0
+                       target_pos=np.zeros(3),
+                       target_rpy=np.zeros(3), # to get roll pitch and yaw
+                       target_vel=np.zeros(3), # not a required setpoint for attitude control
+                       target_rpy_rates=np.zeros(3), # only yawrate is required for attitude control
+                       thrust=0, # required for attitude control
+                       timestep=0.01
                        ):
         """Computes the PID control action (as RPMs) for a single drone.
 
@@ -118,6 +119,10 @@ class AttitudeControl(BaseControl):
 
         """
         self.control_counter += 1
+
+
+
+        """
         thrust, computed_target_rpy, pos_e = self._dslPIDPositionControl(control_timestep,
                                                                          cur_pos,
                                                                          cur_quat,
@@ -126,6 +131,21 @@ class AttitudeControl(BaseControl):
                                                                          target_rpy,
                                                                          target_vel
                                                                          )
+
+        """
+
+        current_rpy = (Rotation.from_quat(cur_quat)).as_euler('ZYX', degrees=False)
+        computed_target_rpy = target_rpy
+        computed_target_rpy[2] = (current_rpy[0] + control_timestep*target_rpy_rates[2])
+        # computed_target_rpy[2] = 0* 3.1415/5
+        pos_e = 0
+
+        print("the thrust is: ", thrust)
+        print("the target rpy is: ", computed_target_rpy)
+        print("the target rates are: ", target_rpy_rates)
+
+        # thrust = 5000
+        # computed_target_rpy[2] = 45*2
         rpm = self._dslPIDAttitudeControl(control_timestep,
                                           thrust,
                                           cur_quat,
@@ -234,12 +254,15 @@ class AttitudeControl(BaseControl):
         w,x,y,z = target_quat
         target_rotation = (Rotation.from_quat([w, x, y, z])).as_matrix()
         rot_matrix_e = np.dot((target_rotation.transpose()),cur_rotation) - np.dot(cur_rotation.transpose(),target_rotation)
+        # rot_matrix_e = (-cur_rotation + target_rotation).transpose()
+        print("shape of rot mat is:", rot_matrix_e.shape)
         rot_e = np.array([rot_matrix_e[2, 1], rot_matrix_e[0, 2], rot_matrix_e[1, 0]])
+        # rot_e = np.array([target_euler[2]-cur_rpy[2], target_euler[1]-cur_rpy[1], target_euler[0]-cur_rpy[0]])
         rpy_rates_e = target_rpy_rates - (cur_rpy - self.last_rpy)/control_timestep
         self.last_rpy = cur_rpy
         self.integral_rpy_e = self.integral_rpy_e - rot_e*control_timestep
         self.integral_rpy_e = np.clip(self.integral_rpy_e, -1500., 1500.)
-        self.integral_rpy_e[0:2] = np.clip(self.integral_rpy_e[0:2], -1., 1.)
+        self.integral_rpy_e[0:3] = np.clip(self.integral_rpy_e[0:3], -1., 1.)
         #### PID target torques ####################################
         target_torques = - np.multiply(self.P_COEFF_TOR, rot_e) \
                          + np.multiply(self.D_COEFF_TOR, rpy_rates_e) \
