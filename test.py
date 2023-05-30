@@ -52,10 +52,10 @@ if __name__ == "__main__":
     x = 0
     y = 0
     for i in range(10*24000):
-        x = 0.00001
+        x = 0.01
         y = y+1e-7
-        yawrate = 3.141591/4
-        obs, reward, done, info = env.step(np.array([-x, 0, yawrate, 38727]))
+        yawrate = 3.141591/20
+        obs, reward, done, info = env.step(np.array([0, x, yawrate, 38727]))
         print(f"the reward is {reward}")
         print(f"the state is {obs}")
         if done:

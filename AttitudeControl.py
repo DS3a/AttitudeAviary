@@ -136,8 +136,17 @@ class AttitudeControl(BaseControl):
 
         current_rpy = (Rotation.from_quat(cur_quat)).as_euler('ZYX', degrees=False)
         computed_target_rpy = target_rpy
+        yaw = current_rpy[0] + 3.141591/2
+        target_roll = target_rpy[0]
+        target_pitch = target_rpy[1]
+
+        computed_target_rpy[0] = target_pitch*np.cos(yaw) + target_roll*np.sin(yaw)
+        computed_target_rpy[1] = target_pitch*np.sin(yaw) + target_roll*np.cos(yaw)
+
+
         computed_target_rpy[2] = (current_rpy[0] + control_timestep*target_rpy_rates[2])
-        # computed_target_rpy[2] = 0* 3.1415/5
+
+        # computed_target_rpy[2] = 2*3.1415/3
         pos_e = 0
 
         print("the thrust is: ", thrust)
